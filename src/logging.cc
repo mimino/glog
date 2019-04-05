@@ -1604,6 +1604,28 @@ void LogMessage::SendToSyslogAndLog() {
 #endif
 }
 
+// L >= log_mutex (callers must hold the log_mutex).
+void LogMessage::SendToSyslog() {
+#ifdef HAVE_SYSLOG_H
+  // Before any calls to syslog(), make a single call to openlog()
+  static bool openlog_already_called = false;
+  if (!openlog_already_called) {
+    openlog(glog_internal_namespace_::ProgramInvocationShortName(),
+            LOG_CONS | LOG_NDELAY | LOG_PID,
+            LOG_USER);
+    openlog_already_called = true;
+  }
+
+  // This array maps Google severity levels to syslog levels
+  const int SEVERITY_TO_LEVEL[] = { LOG_INFO, LOG_WARNING, LOG_ERR, LOG_EMERG };
+  syslog(LOG_USER | SEVERITY_TO_LEVEL[static_cast<int>(data_->severity_)], "%.*s",
+         int(data_->num_chars_to_syslog_),
+         data_->message_text_ + data_->num_prefix_chars_);
+#else
+  LOG(ERROR) << "No syslog support: message=" << data_->message_text_;
+#endif
+}
+
 base::Logger* base::GetLogger(LogSeverity severity) {
   MutexLock l(&log_mutex);
   return LogDestination::log_destination(severity)->logger_;

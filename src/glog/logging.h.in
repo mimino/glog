@@ -1245,6 +1245,7 @@ public:
   // only passed as SendMethod arguments to other LogMessage methods:
   void SendToLog();  // Actually dispatch to the logs
   void SendToSyslogAndLog();  // Actually dispatch to syslog and the logs
+  void SendToSyslog();  // Actually dispatch to syslog
 
   // Call abort() or similar to perform LOG(FATAL) crash.
   static void @ac_cv___attribute___noreturn@ Fail();
